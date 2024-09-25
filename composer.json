@@ -1,0 +1,16 @@
+{
+    "name": "pouria/jsoptimize",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Src\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Pouria Sabaghi",
+            "email": "pouriasabaghi@gmail.com"
+        }
+    ],
+    "require": {}
+}
