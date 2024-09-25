@@ -1,18 +1,33 @@
 <?php
 
-namespace Inc\traits;
+namespace Src\traits;
 
 
 trait CheckRequestOrigin
 {
-    public function originValidate()
+    public function isOriginValid()
     {
-        $allowed = config('app_mode') === 'prod' ? [''] : ['http://127.0.0.1:3000', 'http://localhost:3000'];
+        if (config('app_mode') === 'prod') {
+            $allowed = config('allowed_prod_origin')[0] === "*"
+                ? true
+                : config('allowed_prod_origin');
+        } else {
+            $allowed = config('allowed_local_origin')[0] === "*"
+                ? true
+                : config('allowed_local_origin');
+        }
 
-        if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed))
-            return true;
-        else
-            return false;
+        if ($allowed === true)
+            return $allowed;
+
+
+        if (is_array($allowed))
+            if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed))
+                return true;
+            else
+                return false;
+
+        return false;
 
     }
 }
