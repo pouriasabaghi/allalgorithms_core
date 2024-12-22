@@ -44,7 +44,9 @@ class PostApi
                 'numberposts' => -1,
             ]);
 
-            return rest_ensure_response(compact('posts'));
+            $posts = $this->postResource($posts);
+
+            return rest_ensure_response($posts);
         } catch (\Throwable $th) {
             return rest_ensure_response(new \WP_Error($th->getCode(), $th->getMessage()));
         }
@@ -65,19 +67,40 @@ class PostApi
                 throw new \Exception('Post not found', 404);
 
             // prepare response
-            $response = [
-                'id' => $post->ID,
-                'title' => get_the_title($post),
-                'content' => apply_filters('the_content', $post->post_content),
-                'date' => get_the_date('', $post),
-                'excerpt' => get_the_excerpt($post),
-                'author' => get_the_author($post),
-            ];
+            $post = $this->postResource($post);
 
-            return rest_ensure_response($response);
+            return rest_ensure_response($post);
         } catch (\Throwable $th) {
-            return rest_ensure_response(new \WP_Error($th->getCode(), $th->getMessage()));
+            return rest_ensure_response($th->getMessage());
         }
     }
 
+    public function postResource(array|\WP_Post $data): array
+    {
+        // data is collection of posts
+        if (is_array($data)) {
+            return array_map(
+                fn($post) => [
+                    'id' => $post->ID,
+                    'title' => $post->post_title,
+                    'desc' => $post->post_content,
+                    'excerpt' => get_the_excerpt($post),
+                    'thumbnail' => get_the_post_thumbnail_url($post->ID, 'rectangle'),
+                    'date' => get_the_date('', $post),
+                ]
+                ,
+                $data
+            );
+        }
+
+        // data is a single post
+        return [
+            'id' => $data->ID,
+            'title' => get_the_title($data),
+            'desc' => apply_filters('the_content', $data->post_content),
+            'excerpt' => get_the_excerpt($data),
+            'thumbnail' => get_the_post_thumbnail_url($data->ID, 'square'),
+            'date' => get_the_date('', $data),
+        ];
+    }
 }
