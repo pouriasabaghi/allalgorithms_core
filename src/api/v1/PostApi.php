@@ -15,13 +15,13 @@ class PostApi
                 'callback' => [$this, 'posts'],
             ]);
 
-            register_rest_route('api/v1', '/posts/(?P<id>\d+)', [
+            register_rest_route('api/v1', '/posts/(?P<slug>[a-zA-Z0-9-_]+)', [
                 'methods' => \WP_REST_Server::READABLE,
                 'callback' => [$this, 'post'],
                 'args' => [
-                    'id' => [
+                    'slug' => [
                         'required' => true,
-                        'validate_callback' => fn($param, $request, $key) => is_numeric($param)
+                        'validate_callback' => fn($param, $request, $key) => is_string($param)
                     ]
                 ],
             ]);
@@ -60,11 +60,18 @@ class PostApi
                 throw new \Exception('Request origin is invalid', 403);
 
             // get post 
-            $postId = (int) $request['id'];
-            $post = get_post($postId);
-
-            if (empty($post) || $post->post_status !== 'publish')
+            $slug = sanitize_text_field($request['slug']);
+            //$post = get_page_by_path($slug, OBJECT, 'post');
+            $posts = get_posts([
+                'name' => $slug,
+                'post_type' => 'post',
+                'post_status' => 'publish',
+                'posts_per_page' => 1
+            ]);
+            if (empty($posts[0]) || $posts[0]->post_status !== 'publish')
                 throw new \Exception('Post not found', 404);
+
+            $post = $posts[0];
 
             // prepare response
             $post = $this->postResource($post);
@@ -81,7 +88,7 @@ class PostApi
         if (is_array($data)) {
             return array_map(
                 fn($post) => [
-                    'id' => $post->ID,
+                    'slug' => $post->post_name,
                     'title' => $post->post_title,
                     'desc' => $post->post_content,
                     'excerpt' => get_the_excerpt($post),
@@ -95,7 +102,6 @@ class PostApi
 
         // data is a single post
         return [
-            'id' => $data->ID,
             'title' => get_the_title($data),
             'desc' => apply_filters('the_content', $data->post_content),
             'excerpt' => get_the_excerpt($data),
