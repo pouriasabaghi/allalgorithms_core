@@ -9,7 +9,7 @@ add_action('after_setup_theme', function () {
 add_filter('use_block_editor_for_post', '__return_false');
 
 // image sizes
-add_image_size( 'rectangle', 1000,  1000);
+add_image_size( 'rectangle', 1024,  574, true);
 add_image_size( 'square', 1000,  1000, true);
 
 
